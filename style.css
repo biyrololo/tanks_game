@@ -1,0 +1,13 @@
+*{
+    overflow: hidden;
+}
+canvas{
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+@font-face {
+    font-family: 'Joystix';
+    src: url('fonts/joystix monospace.otf');
+}
