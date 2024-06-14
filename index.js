@@ -1222,7 +1222,7 @@ new Pumping('Смертельный луч', '#000', ()=>{
 })
 ];
 
-const p = new Tank({x: canvas.width/2, y: canvas.height/3+150},{hull:pickUpRandomFromArray(aviableTanks), gun:pickUpRandomFromArray(aviableGuns)},8, 'A', pickUpRandomFromArray(avliableHullColors),teams.allies, 2, pickUpRandomFromArray(aviableTracks)), //pickUpRandomFromArray(aviableTanks)
+const p = new Tank({x: canvas.width/2, y: canvas.height/3+150},{hull: ALL_HULLS[0], gun: ALL_GUNS[0]},8, 'A', avliableHullColors[0],teams.allies, 2, pickUpRandomFromArray(aviableTracks)), //pickUpRandomFromArray(aviableTanks)
 secondTank = new Tank({x: canvas.width/2-250, y: canvas.height/2-250},{hull:'08', gun:'02'},5, 'A'); //,{hull: {center:{x:128, y:174}}, gun: {center:{x: 128, y: 160}}}
 // p.bombardment.isActive = true;
 p.reload.mTime=50;
@@ -1254,6 +1254,7 @@ var tanks = []; //secondTank, new Tank({x: canvas.width/2+250, y: canvas.height/
 function addTank(team=teams.enemies){
     if(!document.hasFocus()) return;
     let tPos = {x: Math.random()*map.width, y: Math.random()*map.height};
+    if(pointCollisionMap(tPos)) return
     const hull_ = pickUpRandomFromArray(ALL_HULLS);
     const gun_ = pickUpRandomFromArray(ALL_GUNS);
     const speed_ = CHARACTERISTICS_HULLS[hull_].speed;
@@ -3436,7 +3437,8 @@ function key_pressed(keycode) {
                     p.SMGParams.t++;
                 }
                 else if(p.reload.t < p.reload.mTime)
-                {p.damageT = 2;
+                {
+                    // p.damageT = 2;
                     p.overheat=0;
                     p.MGtime++;
                     if(p.MGtime > p.reload.mTime / 0.125 * 0.7) {p.temp+=0.7; p.overheat=1;}
@@ -3482,7 +3484,7 @@ function key_pressed(keycode) {
                     if(isFound){
                         if(tk[0].team != p.team)
                         tk[0].health.cur-=p.damageT;
-                        if(tk[0].health.cur <= 0) p.health.cur=p.health.max;
+                        // if(tk[0].health.cur <= 0) p.health.cur=p.health.max;
                     }
                     p.MGSize = (Math.sqrt(bx*bx+by*by) -(tanksParams[p.nameImg.gun].gun.center.y - tanksParams[p.nameImg.gun].gun.border.y)*p.drawnSize/p.gun.height);
                     // bullets.push({x: bx+p.pos.x, y: by+p.pos.y, angle: (p.angle.gun+p.angle.hull), time: p.bulletParams.mTime});
@@ -3565,11 +3567,13 @@ function key_pressed(keycode) {
                     attacked.forEach(t=>{
                         // console.log(p.damageT)
                         if(t.team != p.team)
-                        {t.health.cur-=p.damageT;
+                        {
+                            t.health.cur-=p.damageT;
                             t.temp+=6;
                             if(t.temp > 800) t.temp = 800;
                             t.attackedBF = true;
-                        if(t.health.cur <= 0) p.health.cur=p.health.max;}
+                            // if(t.health.cur <= 0) p.health.cur=p.health.max;
+                        }
                         else{
                             if(t.temp < 0) {t.temp+=4;
                             if(t.temp > 0) t.temp = 0;}
@@ -3682,14 +3686,14 @@ function key_pressed(keycode) {
                             }).forEach(t=>{
                                 if(t.team != p.team)
                                 t.health.cur-=p.damageT;
-                                if(t.health.cur <= 0) p.health.cur=p.health.max;
+                                // if(t.health.cur <= 0) p.health.cur=p.health.max;
                             })
                         }
                         else
                         if(isFound){
                                 if(tk[0].team != p.team)
                                 tk[0].health.cur-=p.damageT;
-                                if(tk[0].health.cur <= 0) p.health.cur=p.health.max;
+                                // if(tk[0].health.cur <= 0) p.health.cur=p.health.max;
                         } //p.bulletParams.size
                         if(p.isThunder){
                             bullets.push({x: bx+p.pos.x, y: by+p.pos.y, angle: (p.angle.gun+p.angle.hull), time: p.bulletParams.mTime, size: thunderSize});
@@ -3768,7 +3772,8 @@ function teslaShot(){
             // console.log(p.damageT)
             if(t.team != p.team)
             {t.health.cur-=p.damageT;
-            if(t.health.cur <= 0) p.health.cur=p.health.max;}
+            // if(t.health.cur <= 0) p.health.cur=p.health.max;
+            }
             // console.log(t)
         });
         // bullets.push({x: bx+p.pos.x, y: by+p.pos.y, angle: (p.angle.gun+p.angle.hull), time: p.bulletParams.mTime});

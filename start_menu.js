@@ -47,6 +47,8 @@ for(let i = 0; i < ALL_GUNS.length; ++i) {
                 current_gun = i;
                 menu_tank.setGun(ALL_GUNS[i]);
                 changes_functions[ALL_HULLS[i]]();
+                p.damageT = CHARACTERISTICS_GUNS[ALL_GUNS[i]].damage;
+                p.reload.mTime = CHARACTERISTICS_GUNS[ALL_GUNS[i]].reload_time;
                 p.setGun(ALL_GUNS[i]);
             },
             `${srcImg}Color_A/Gun_${ALL_GUNS[i]}.png`
