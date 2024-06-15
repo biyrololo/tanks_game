@@ -49,6 +49,10 @@ class Btn{
             this.hoverParams.back=false;
         }
     }
+    /**
+     * 
+     * @param {{x: number; y: number} || undefined} img 
+     */
     draw(img=undefined){
         this.shift=0;
         this.drawn.color=this.color.bg;
@@ -68,7 +72,9 @@ class Btn{
         if(img){
             c.fillText(this.text,this.pos.x+this.size.height,this.pos.y+this.size.height*0.5+this.shift, this.size.width*0.6);
             c.fillStyle=img;
-            c.fillRect(this.pos.x+10, this.pos.y+10, this.size.height*0.8-20, this.size.height*0.8-20);
+            c.drawImage(icons, img.x*(ICON_SIZE + 2), img.y*(ICON_SIZE + 2), ICON_SIZE, ICON_SIZE,
+                this.pos.x+10, this.pos.y+10, this.size.height*0.8-20, this.size.height*0.8-20);
+            // c.fillRect(this.pos.x+10, this.pos.y+10, this.size.height*0.8-20, this.size.height*0.8-20);
         }
         else{
             c.textAlign='center';
@@ -153,12 +159,12 @@ const playerStatesList = [
         name: 'speed',
         cur: 0, max: 8,
         img: '#fcea47',
-        icon: {x: 0, y: 1},
+        icon: {x: 1, y: 1},
         active: true
     },
     {
         name: 'health',
-        cur: 0, max: 4,
+        cur: 0, max: 10,
         img: '#fa166a',
         icon: {x: 1, y: 0},
         active: true
@@ -179,13 +185,13 @@ const playerStatesList = [
         name: 'laser',
         cur: 0, max: 6,
         img: '#7097BA',
-        icon: {x: 0, y: 1},
+        icon: {x: 2, y: 1},
         active: false
     },
     {
         name: 'airSupport',
         cur: 0,
-        max: 1,
+        max: 3,
         img: '#03fca9',
         icon: {x: 2, y: 0},
         active: false
@@ -193,9 +199,9 @@ const playerStatesList = [
     {
         name: 'ray',
         cur: 0,
-        max: 2,
+        max: 4,
         img: '#000',
-        icon: {x: 0, y: 1},
+        icon: {x: 3, y: 0},
         active: false
     }
 ],
@@ -307,6 +313,8 @@ class Tank{
         this.isRay = false;
         this.fireGunSize;
         this.rayAngle = 0;
+        this.rayDamage = 30;
+        this.flyDamage = 50;
         this.rayAnim = {
             cur: 0, max: 7, timer: {
                 v: 0, fr: 5
@@ -1142,7 +1150,14 @@ class Tank{
 let pumping_id_ = 0; 
 
 class Pumping{
-    constructor(text='none', img='', pump=()=>{}, count = 1){
+    /**
+     * 
+     * @param {string} text 
+     * @param {{x: number, y: number}} img 
+     * @param {Function} pump 
+     * @param {number} count 
+     */
+    constructor(text='none', img={x: 0, y: 1}, pump=()=>{}, count = 1){
         this.text = text;
         this.img = img;
         this.pump = pump;
@@ -1153,48 +1168,30 @@ class Pumping{
 }
 const pumpings = [
 // new Pumping('двойна пушка', '#EE77FA', ()=>{playerStatesList[playerStates.countShots].cur++; p.countShots=2; p.setGun(doublegunIMG);p.isMGun=false; p.isFiregun=false; p.isTesla=false; p.isThunder=false;  p.reload.mTime = 50; p.damageT = 30; p.isRicochet = false; p.isFreezegun=false; }),
-new Pumping('Поддержка с воздуха', '#EE77FA', ()=>{playerStatesList[playerStates.airSupport].cur++;playerStatesList[playerStates.airSupport].active=true; p.bombardment.isActive=true;}),
-new Pumping('увеличение скорости', '#abcdef', ()=>{playerStatesList[playerStates.speed].cur++; p.speed*=1.05;}, playerStatesList[playerStates.speed].max),
+new Pumping('Поддержка с воздуха', {x: 2, y: 0}, ()=>{
+    playerStatesList[playerStates.airSupport].active=true; 
+    p.bombardment.isActive=true;
+    pumpings.push(
+        new Pumping('Увеличить урон', {x: 2, y: 0}, ()=>{
+            p.flyDamage+=20;
+            playerStatesList[playerStates.airSupport].cur++; 
+        }, playerStatesList[playerStates.airSupport].max),
+    )
+}),
+new Pumping('увеличение скорости', {x: 1, y : 1}, ()=>{playerStatesList[playerStates.speed].cur++; p.speed*=1.05;}, playerStatesList[playerStates.speed].max),
+new Pumping('Увеличение максмального здоровья', {x: 1, y: 0}, ()=>{
+    playerStatesList[playerStates.health].cur++; 
+    p.health.max+=60;
+    p.health.cur = p.health.max;
+}, playerStatesList[playerStates.health].max-1),
 // new Pumping('сменить корпус', '#4e369e', ()=>{p.setHull(pickUpRandomFromArray(aviableTanks))}),
 // new Pumping('сменить пушку', '#FF00FA', ()=>{p.setGun(pickUpRandomFromArray(aviableTanks))}),
-new Pumping('Увеличить урон', '#FF00FA', ()=>{
+new Pumping('Увеличить урон', {x: 0, y: 0}, ()=>{
     playerStatesList[playerStates.damage].active=true;
     p.damageT*=1.2;
-    pumpings.push(new Pumping('Увеличить урон', '#abcdef', ()=>{playerStatesList[playerStates.damage].cur++; 
+    pumpings.push(new Pumping('Увеличить урон', {x: 0, y: 0}, ()=>{playerStatesList[playerStates.damage].cur++; 
         p.damageT*=1.2;    
     },playerStatesList[playerStates.damage].max-1));
-}),
-new Pumping('лазер', '#7097BA', ()=>{
-    pumpings.push(new Pumping('урон лазера + 10%\nзамедление скорости + 10%', '#7097BA',()=>{
-        p.laserDamage*=1.1;
-        p.laserSpeedFactor-=0.1;
-        p.laserImgCount.max++;
-        playerStatesList[playerStates.laser].cur++;
-        p.laserWidth*=1.1;
-        if(playerStatesList[playerStates.laser].cur == 3){
-            pumpings.push(new Pumping('урон лазера +10%\nобласть поражения + 20%', '#7097BA', ()=>{
-                p.laserRange*=1.2;
-                p.laserDamage*=1.1;
-                p.laserWidth*=1.2;
-                playerStatesList[playerStates.laser].cur++;
-                pumpings.push(new Pumping('замедление скорости лазера + 20%', '#7097BA', ()=>{
-                    playerStatesList[playerStates.laser].cur++;
-                    p.laserSpeedFactor-=0.2;
-                    p.laserImgCount.max=9;
-                    p.laserWidth*=1.2;
-                    pumpings.push(new Pumping('урон лазера +50%', '#7097BA',()=>{
-                        playerStatesList[playerStates.laser].cur++;
-                    p.laserDamage*=1.5;
-                    p.laserImgCount.max=12;
-                    p.laserWidth=30;
-                    }) )
-                }))
-            }))
-        }
-    },3));
-    p.isLaserActive=1;
-    p.laserImgCount.max = 3;
-    playerStatesList[playerStates.laser].active=true;
 }),
 // new Pumping('ОГНЕМЁТ', '#fc6203', ()=>{p.reload.t = 0;p.isRicochet = false; p.isTesla=false; p.isFiregun=true; p.isMGun=false; p.MGActive = false; p.isThunder=false; p.setGun(firegunIMG); p.damageT=2; p.reload.mTime = 86; p.isFreezegun=false;}),
 // new Pumping('РЕЛЬСА', '#00fffb', ()=>{p.reload.t = 0;p.isRicochet = false; p.isTesla=true; p.isFiregun=false; p.isMGun=false; p.MGActive = false; p.isThunder=false; p.setGun(teslaIMG); p.damageT=50; p.reload.mTime = 70; p.isFreezegun=false;}),
@@ -1205,21 +1202,7 @@ new Pumping('лазер', '#7097BA', ()=>{
 //     p.isRicochet = true; p.isFreezegun=false;}),
 // new Pumping('ФРИЗ', '#FFFFFF', ()=>{p.reload.t = 0; p.isMGun=false; p.isFiregun=false; p.isTesla=false; p.isThunder=false; p.setGun(freezeIMG); p.damageT=17; p.reload.mTime = 180; p.MGActive = false;
     // p.isRicochet = false; p.isFreezegun=true;}),
-new Pumping('Смертельный луч', '#000', ()=>{
-    p.isRay = 1;
-    p.rayCount = 1;
-    playerStatesList[playerStates.ray].active=true;
-    pumpings.push(new Pumping('Уменьшить кд на 10%', '#000', ()=>{
-        playerStatesList[playerStates.ray].cur++;
-        p.rayCd.max*=0.9;
-        p.rayCd.cur = 0;
-        pumpings.push(new Pumping('Увеличить количество лучей', '#000', ()=>{
-            playerStatesList[playerStates.ray].cur++;
-            p.rayCount=2;
-            p.rayCd.cur = 0;
-        }))
-    }))
-})
+
 ];
 
 const p = new Tank({x: 824, y: 350},{hull: ALL_HULLS[0], gun: ALL_GUNS[0]},8, 'A', avliableHullColors[0],teams.allies, 2, pickUpRandomFromArray(aviableTracks)), //pickUpRandomFromArray(aviableTanks)
@@ -1230,6 +1213,7 @@ damage=30;
 p.countShots=1;
 p.isLaserActive=0;
 p.damageT = 30;
+p.laserDamage = 0.2;
 // p.reload.mTime = 180;
 p.reload.t = 0;
 p.attackRange = canvas.width*0.3;
@@ -1391,7 +1375,27 @@ function addTank(team=teams.enemies){
     // allies.push(tank)
 }
 addTank();
-setInterval(()=>{if(tanks.length < 10 && gameState==gameStates.active) {addTank();} if(allies.length < 6 && gameState==gameStates.active) {addTank(teams.allies)}}, 5000);
+setInterval(()=>{
+
+    if(gameState !== gameStates.active){
+        return
+    }
+
+    if(allies.length >= tanks.length){
+        addTank();
+        return
+    }
+
+    if(allies.length < 5){
+        addTank(teams.allies)
+        return
+    }
+
+    if(tanks.length < 10){
+        addTank();
+    }
+}, 
+5000);
 
 let gainButtonColors = {
     bg: '#606060',
@@ -1490,6 +1494,7 @@ function animate(){
 }
 
 function setGainState(){
+    p.health.cur = p.health.max;
     gameState=gameStates.chooseGain;
     const randomGains = getRandomElements(pumpings, 3);
     for(let i = 0; i < 3; i++){
@@ -2554,7 +2559,7 @@ function renderGame(){
             }
             tk.forEach(t=>{
                 if(t.team!=p.team){
-                    t.health.cur-=30;
+                    t.health.cur-=p.rayDamage;
                 }
             })
             c.setTransform(1, 0, 0, 1, canvas.width/2, canvas.height/2);
@@ -2916,7 +2921,7 @@ function renderGame(){
             {
                 p.bombardment.action.time--;
                 if(!p.bombardment.bombed && (p.bombardment.action.time)/p.bombardment.action.mTime+planeSize/canvas.height <= (canvas.height/2-p.pos.y+p.bombardment.enemy.pos.y)/canvas.height){
-                    p.bombardment.enemy.health.cur-=50;
+                    p.bombardment.enemy.health.cur-=p.flyDamage;
                     p.bombardment.bombed=true;
                     // bullets.push({x: p.bombardment.enemy.pos.x, y: p.bombardment.enemy.pos.y, angle: 0, time: p.bulletParams.mTime,
                     //      size: 2});
@@ -2926,7 +2931,7 @@ function renderGame(){
                 if(p.bombardment.action.time == -p.bombardment.action.mTime/2){
                     p.bombardment.action.isActive = false;
                     if(!p.bombardment.bombed){
-                        p.bombardment.enemy.health.cur-=50;
+                        p.bombardment.enemy.health.cur-=p.flyDamage;
                     p.bombardment.bombed=true;
                     // bullets.push({x: p.bombardment.enemy.pos.x, y: p.bombardment.enemy.pos.y, angle: 0, time: p.bulletParams.mTime,
                     //      size: 2});

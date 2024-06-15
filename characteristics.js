@@ -5,7 +5,7 @@ const CHARACTERISTICS_HULLS = {
     '01': {
         speed: 4,
         max_health: 210
-    },
+   },
     '02': {
         speed: 2,
         max_health: 330

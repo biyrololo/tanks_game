@@ -105,8 +105,8 @@ for(let i = 0; i < ALL_GUNS.length; ++i) {
                 current_hull = i;
                 menu_tank.setHull(ALL_HULLS[i]);
                 p.setHull(ALL_HULLS[i]);
-                p.health.max = CHARACTERISTICS_HULLS[ALL_HULLS[i]].max_health;
-                p.health.cur = CHARACTERISTICS_HULLS[ALL_HULLS[i]].max_health;
+                p.health.max = CHARACTERISTICS_HULLS[ALL_HULLS[i]].max_health * 2;
+                p.health.cur = CHARACTERISTICS_HULLS[ALL_HULLS[i]].max_health * 2;
                 p.speed = CHARACTERISTICS_HULLS[ALL_HULLS[i]].speed;
             },
             `${srcImg}Color_A/Hull_${ALL_HULLS[i]}.png`
