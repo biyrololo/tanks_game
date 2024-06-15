@@ -109,8 +109,8 @@ const teslaRange = tanksSize*5.5;
 const MGunRange = tanksSize*5;
 const teslaLen  = canvas.width/tanksSize;
 var attackRange = 600,attackRangeEneimes=450, bulletSpeed = 25, damage = 100, laserRange = 400;
-const maxExplosionFrames = 8, explosionSpeed = 4, maxFlash=3, aviableTanks = ['01','02','04','05','06','08', '03', '07'], avliableHullColors = ['A', 'B', 'C', 'D'],aviableFlashs = ['A', 'B'],
-aviableGuns = ['01'], //,'04' - firegun ,'02' - tesla, ,'06' - doublegun ,'08' -  MG '01', - Thunder , '03'- rico
+const maxExplosionFrames = 8, explosionSpeed = 4, maxFlash=3, aviableTanks = ['08', '07', '06'], avliableHullColors = ['A', 'B'],aviableFlashs = ['A', 'B'],
+aviableGuns = ['01', '04'], //,'04' - firegun ,'02' - tesla, ,'06' - doublegun ,'08' -  MG '01', - Thunder , '03'- rico
 aviableTracks = ['1', '2', '3', '4'],
 aviableTireTracks = ['1, 2'];
 const firegunIMG = '04',
@@ -170,7 +170,7 @@ const playerStatesList = [
         active: false
     },{
         name: 'damage',
-        cur: 0, max: 8,
+        cur: 0, max: 10,
         img: '#ff5900',
         icon: {x: 0, y: 0},
         active: false
@@ -1154,14 +1154,14 @@ class Pumping{
 const pumpings = [
 // new Pumping('двойна пушка', '#EE77FA', ()=>{playerStatesList[playerStates.countShots].cur++; p.countShots=2; p.setGun(doublegunIMG);p.isMGun=false; p.isFiregun=false; p.isTesla=false; p.isThunder=false;  p.reload.mTime = 50; p.damageT = 30; p.isRicochet = false; p.isFreezegun=false; }),
 new Pumping('Поддержка с воздуха', '#EE77FA', ()=>{playerStatesList[playerStates.airSupport].cur++;playerStatesList[playerStates.airSupport].active=true; p.bombardment.isActive=true;}),
-new Pumping('увеличение скорости на 5%', '#abcdef', ()=>{playerStatesList[playerStates.speed].cur++; p.speed*=1.05;}, playerStatesList[playerStates.speed].max),
+new Pumping('увеличение скорости', '#abcdef', ()=>{playerStatesList[playerStates.speed].cur++; p.speed*=1.05;}, playerStatesList[playerStates.speed].max),
 // new Pumping('сменить корпус', '#4e369e', ()=>{p.setHull(pickUpRandomFromArray(aviableTanks))}),
 // new Pumping('сменить пушку', '#FF00FA', ()=>{p.setGun(pickUpRandomFromArray(aviableTanks))}),
 new Pumping('Увеличить урон', '#FF00FA', ()=>{
     playerStatesList[playerStates.damage].active=true;
-    p.damageT*=1.1;
+    p.damageT*=1.2;
     pumpings.push(new Pumping('Увеличить урон', '#abcdef', ()=>{playerStatesList[playerStates.damage].cur++; 
-        p.damageT*=1.1;    
+        p.damageT*=1.2;    
     },playerStatesList[playerStates.damage].max-1));
 }),
 new Pumping('лазер', '#7097BA', ()=>{
@@ -1222,7 +1222,7 @@ new Pumping('Смертельный луч', '#000', ()=>{
 })
 ];
 
-const p = new Tank({x: canvas.width/2, y: canvas.height/3+150},{hull: ALL_HULLS[0], gun: ALL_GUNS[0]},8, 'A', avliableHullColors[0],teams.allies, 2, pickUpRandomFromArray(aviableTracks)), //pickUpRandomFromArray(aviableTanks)
+const p = new Tank({x: 824, y: 350},{hull: ALL_HULLS[0], gun: ALL_GUNS[0]},8, 'A', avliableHullColors[0],teams.allies, 2, pickUpRandomFromArray(aviableTracks)), //pickUpRandomFromArray(aviableTanks)
 secondTank = new Tank({x: canvas.width/2-250, y: canvas.height/2-250},{hull:'08', gun:'02'},5, 'A'); //,{hull: {center:{x:128, y:174}}, gun: {center:{x: 128, y: 160}}}
 // p.bombardment.isActive = true;
 p.reload.mTime=50;
@@ -1255,8 +1255,8 @@ function addTank(team=teams.enemies){
     if(!document.hasFocus()) return;
     let tPos = {x: Math.random()*map.width, y: Math.random()*map.height};
     if(pointCollisionMap(tPos)) return
-    const hull_ = pickUpRandomFromArray(ALL_HULLS);
-    const gun_ = pickUpRandomFromArray(ALL_GUNS);
+    const hull_ = pickUpRandomFromArray(aviableTanks);
+    const gun_ = pickUpRandomFromArray(aviableGuns);
     const damageT_ = CHARACTERISTICS_GUNS[gun_].damage;
     const reload_time_ = CHARACTERISTICS_GUNS[gun_].reload_time;
     const speed_ = CHARACTERISTICS_HULLS[hull_].speed;
@@ -1274,29 +1274,37 @@ function addTank(team=teams.enemies){
         ); //Math.floor(Math.random()*2)+1, pickUpRandomFromArray(aviableFlashs)
     tSpawn.damageT = damageT_;
     tSpawn.reload.mTime = reload_time_;
-    tSpawn.isLaserActive = Math.random()>0.8;
-    if(Math.random() > 0.8 && team == teams.enemies){
+    if(p.level.cur > 5){
+        tSpawn.isLaserActive = Math.random()>0.8;
+    }
+    if(p.level.cur > 10){
+        let level_5 = Math.floor(p.level.cur/5 + 1);
+        tSpawn.health.max += 50 * level_5;
+        tSpawn.health.cur = tSpawn.health.max;
+        tSpawn.damageT += level_5;
+    }
+    if(gun_ === '05'){
         tSpawn.isFreezegun=1;
         tSpawn.setGun(freezeIMG);
         tSpawn.reload.mTime = 180;
         tSpawn.damageT = 17;
     }
     else
-    if(Math.random() > 0.7 && team == teams.enemies){
+    if(gun_ === '03'){
         tSpawn.isRicochet = 1;
         tSpawn.setGun(ricoIMG);
         tSpawn.countShots = 1;
         tSpawn.reload.mTime=200;
     }
     else
-    if(Math.random() > 0.7  && team == teams.enemies){
+    if(gun_ === '07' ){
         tSpawn.isThunder=1;
         tSpawn.damageT = 40;
         tSpawn.setGun(thunderIMG);
         tSpawn.countShots=1;
     }
     else
-    if(Math.random() > 0.75 && team == teams.enemies){
+    if(gun_ === '02'){
         
     tSpawn.isTesla = 1;
     tSpawn.setGun(teslaIMG);
@@ -1304,11 +1312,11 @@ function addTank(team=teams.enemies){
     tSpawn.damageT = 50;
     }
     else
-    if(Math.random() > 0.75){
+    if(gun_ === '06'){
         tSpawn.countShots=2;
         tSpawn.setGun(doublegunIMG);
     }
-    else if(team==teams.enemies && Math.random()>0.7)
+    else if(gun_ === '04')
     {tSpawn.isFiregun = true;
     tSpawn.rotateGunSpeed = 2;
     tSpawn.damageT = 1;
@@ -1316,7 +1324,7 @@ function addTank(team=teams.enemies){
     tSpawn.setGun(firegunIMG);
     tSpawn.countShots = 1;
     }
-    else if(team==teams.enemies && Math.random()>0.7)
+    else if(gun_ === '08')
     {tSpawn.isMGun = true;
     tSpawn.damageT = 1;
     tSpawn.speed-=2;
@@ -1353,7 +1361,6 @@ function addTank(team=teams.enemies){
             tanks.push(tSpawn)
         else allies.push(tSpawn)
     }
-    else addTank(team)
 }, 400)
     // tPos = {x: Math.random()*(endMap.x-beginMap.x)+beginMap.x, y: Math.random()*(endMap.y-beginMap.y)+beginMap.y};
     // tank = new Tank({x: tPos.x, y: tPos.y},{hull:pickUpRandomFromArray(aviableTanks), gun:pickUpRandomFromArray(aviableTanks)},Math.random()*3+3, pickUpRandomFromArray(aviableFlashs), pickUpRandomFromArray(avliableHullColors), teams.allies);
@@ -1384,7 +1391,7 @@ function addTank(team=teams.enemies){
     // allies.push(tank)
 }
 addTank();
-setInterval(()=>{if(tanks.length < 20 && gameState==gameStates.active) {addTank();} if(allies.length < 20 && gameState==gameStates.active) {addTank(teams.allies)}}, 5000);
+setInterval(()=>{if(tanks.length < 10 && gameState==gameStates.active) {addTank();} if(allies.length < 6 && gameState==gameStates.active) {addTank(teams.allies)}}, 5000);
 
 let gainButtonColors = {
     bg: '#606060',
@@ -1438,7 +1445,8 @@ function start_menu_loaded(){
 }
 
 function animate(){
-    requestAnimationFrame(animate);
+    // requestAnimationFrame(animate);
+    setTimeout(animate, 1000/60);
     if(gameState == gameStates.active && document.hasFocus()){
         renderGame();
     }
@@ -3245,15 +3253,15 @@ function key_pressed(keycode) {
     if(gameState == gameStates.active){
     let ts;
     switch(keycode){
-        case '37':
+        case CONTROLS.rotateLeft.key_code:
             if(1) //!p.teslaActive || 
             p.angle.gun-=5*(p.temp<0?(800+p.temp)/800:1);
             break
-        case '39':
+        case CONTROLS.rotateRight.key_code:
             if(1) //!p.teslaActive || 
             p.angle.gun+=5*(p.temp<0?(800+p.temp)/800:1);
             break
-        case '65':
+        case CONTROLS.left.key_code:
             if(1) //!p.teslaActive || 
             {p.angle.hull-=5*(Math.min(p.speed, MAX_SPEED) / MAX_SPEED)*(p.temp<0?(800+p.temp)/800:1);
             ts = tanks.filter(t=>{return (
@@ -3277,7 +3285,7 @@ function key_pressed(keycode) {
         })
             p.isMove=true;}
             break
-        case '68':
+        case CONTROLS.right.key_code:
             if(1) //!p.teslaActive || 
             {p.angle.hull+=5*(Math.min(p.speed, MAX_SPEED) / MAX_SPEED)*(p.temp<0?(800+p.temp)/800:1);
             ts = tanks.filter(t=>{return (
@@ -3302,7 +3310,7 @@ function key_pressed(keycode) {
         })
             p.isMove=true;}
             break
-        case '87':
+        case CONTROLS['forward'].key_code:
             p.pos.y-=Math.cos(p.angle.hull*Math.PI/180)*p.speed*p.speedFactor*(p.temp<0?(800+p.temp)/800:1);
             p.pos.x+=Math.sin(p.angle.hull*Math.PI/180)*p.speed*p.speedFactor*(p.temp<0?(800+p.temp)/800:1);
             ts = tanks.filter(t=>{return (
@@ -3335,14 +3343,15 @@ function key_pressed(keycode) {
                     if(p.exp>=p.level.need){
                         p.level.cur++;
                         p.exp%=p.level.need;
-                        p.level.need++;
+                        // p.level.need++;
+                        on_level_up(p.level.cur + 1);
                         setGainState();
                     }
                     exps.splice(i, 1);
                 }
             })
             break;
-        case '83':
+        case CONTROLS['backward'].key_code:
             p.pos.y+=Math.cos(p.angle.hull*Math.PI/180)*p.speed*p.speedFactor*(p.temp<0?(800+p.temp)/800:1);
             p.pos.x-=Math.sin(p.angle.hull*Math.PI/180)*p.speed*p.speedFactor*(p.temp<0?(800+p.temp)/800:1);
             ts = tanks.filter(t=>{return (
@@ -3375,14 +3384,15 @@ function key_pressed(keycode) {
                     if(p.exp>=p.level.need){
                         p.level.cur++;
                         p.exp%=p.level.need;
-                        p.level.need++;
+                        // p.level.need++;
+                        on_level_up(p.level.cur + 1);
                         setGainState();
                     }
                     exps.splice(i, 1);
                 }
             })
             break;
-        case '32', '69':
+        case CONTROLS['fire'].key_code:
             p.attackRange = attackRange;
             let tk = [], tks = [];
             // c.setTransform(1,0,0,1,0,0);
@@ -3884,6 +3894,8 @@ function pickUpRandomFromArray(arr){
 setInterval(()=> {
     for (var keycode in keys_pressed) {
         key_pressed(keycode);
+        if(gameState === gameStates.start_menu)
+            handleMenuKeyPress(keycode);
     }
 }, 20);
 window.addEventListener('mousemove', e=>{
@@ -3894,10 +3906,10 @@ window.addEventListener('click', ()=>{
     mouse.click=true;
 })
 window.addEventListener("keyup",(e)=>{
-        switch (e.key.toLowerCase()){
+        let key_code = String(e.keyCode);
+        switch (key_code){
             
-            case 'e':
-            case "у":
+            case CONTROLS.fire.key_code:
                 if(p.isFiregun && !p.firegunCD)
                 {p.firegunActive = 0;
                 p.fireParams.f = 0;

@@ -38,7 +38,7 @@ const CHARACTERISTICS_HULLS = {
 
 const MAX_SPEED = 8
 
-const _FPS = 50;
+const _FPS = 60;
 
 /**
  * @type {{[key: string]: {damage: number, reload_time: number}}}
@@ -50,7 +50,7 @@ const CHARACTERISTICS_GUNS = {
     },
     '02': { // рельса
         damage: 50,
-        reload_time: _FPS * 3
+        reload_time: _FPS * 1.5
     },
     '03': { // рикошет
         damage: 25,

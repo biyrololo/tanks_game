@@ -197,4 +197,5 @@ function renderStartMenu() {
     draw_choose_hull();
     draw_choose_color();
     start_game_btn.draw();
+    renderControls(c);
 }
