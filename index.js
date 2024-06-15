@@ -1257,6 +1257,8 @@ function addTank(team=teams.enemies){
     if(pointCollisionMap(tPos)) return
     const hull_ = pickUpRandomFromArray(ALL_HULLS);
     const gun_ = pickUpRandomFromArray(ALL_GUNS);
+    const damageT_ = CHARACTERISTICS_GUNS[gun_].damage;
+    const reload_time_ = CHARACTERISTICS_GUNS[gun_].reload_time;
     const speed_ = CHARACTERISTICS_HULLS[hull_].speed;
     const max_health_ = CHARACTERISTICS_HULLS[hull_].max_health;
     let tSpawn = new Tank(
@@ -1270,6 +1272,8 @@ function addTank(team=teams.enemies){
         pickUpRandomFromArray(aviableTracks), // track name
         max_health_ // health
         ); //Math.floor(Math.random()*2)+1, pickUpRandomFromArray(aviableFlashs)
+    tSpawn.damageT = damageT_;
+    tSpawn.reload.mTime = reload_time_;
     tSpawn.isLaserActive = Math.random()>0.8;
     if(Math.random() > 0.8 && team == teams.enemies){
         tSpawn.isFreezegun=1;
