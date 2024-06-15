@@ -3343,7 +3343,7 @@ function key_pressed(keycode) {
                     if(p.exp>=p.level.need){
                         p.level.cur++;
                         p.exp%=p.level.need;
-                        // p.level.need++;
+                        p.level.need++;
                         on_level_up(p.level.cur + 1);
                         setGainState();
                     }
@@ -3384,7 +3384,7 @@ function key_pressed(keycode) {
                     if(p.exp>=p.level.need){
                         p.level.cur++;
                         p.exp%=p.level.need;
-                        // p.level.need++;
+                        p.level.need++;
                         on_level_up(p.level.cur + 1);
                         setGainState();
                     }
