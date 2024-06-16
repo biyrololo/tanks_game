@@ -109,6 +109,8 @@ map.src=`${srcImg}map.png`;
 // realSize = {center:{x:128, y:174}},
 // pos = {x: canvas.width/2, y: canvas.height/2}; //-realSize.center.x*hullSize.w/hull.width, -realSize.center.y*hullSize.h/hull.height
 var speed = 10, rotateAngle=0, gunAngle = 0, crossHairSize = 100;
+var game_time = 0;
+var game_time_timer = 0;
 const secondPos = {x: canvas.width/2-250, y: canvas.height/2-250},
 tanksSize=150, laserWidth = 10;
 const teslaRange = tanksSize*5.5;
@@ -117,6 +119,7 @@ const teslaLen  = canvas.width/tanksSize;
 var attackRange = 600,attackRangeEneimes=450, bulletSpeed = 25, damage = 100, laserRange = 400;
 const maxExplosionFrames = 8, explosionSpeed = 4, maxFlash=3, aviableTanks = ['08', '07', '06'], avliableHullColors = ['A', 'B'],aviableFlashs = ['A', 'B'],
 aviableGuns = ['01', '04'], //,'04' - firegun ,'02' - tesla, ,'06' - doublegun ,'08' -  MG '01', - Thunder , '03'- rico
+aviableGunsForAllies = ['01', '06'], // 01, 06
 aviableTracks = ['1', '2', '3', '4'],
 aviableTireTracks = ['1, 2'];
 const firegunIMG = '04',
@@ -353,7 +356,7 @@ class Tank{
         this.exp = 0;
         this.trackName = trackName;
         this.lengthLaser = 0;
-        this.level={cur: 0, need: 2};
+        this.level={cur: 0, need: 1};
         this.team = team;
         this.goBack = {active: false, time: 0, mTime: 100};
         this.rotateOnPlace = {active: false, time: 0, mTime: 90, state: 1};
@@ -796,7 +799,7 @@ class Tank{
         }
         if(this.deathTime.active){
             
-            if(this.deathTime.time > 0) {c.drawImage(p.explosion[Math.floor(((this.deathTime.mTime-this.deathTime.time)/this.deathTime.mTime)*maxExplosionFrames)], 0, 0, this.explosion[0].width, this.explosion[0].height, -this.bulletParams.size*1.5, -this.bulletParams.size*1.5, this.bulletParams.size*3, this.bulletParams.size*3);
+            if(this.deathTime.time > 0) {c.drawImage(this.explosion[Math.floor(((this.deathTime.mTime-this.deathTime.time)/this.deathTime.mTime)*maxExplosionFrames)], 0, 0, this.explosion[0].width, this.explosion[0].height, -this.bulletParams.size*1.5, -this.bulletParams.size*1.5, this.bulletParams.size*3, this.bulletParams.size*3);
             this.deathTime.time--;}
             else {this.deathTime.active=false;}
         }
@@ -1145,7 +1148,7 @@ class Tank{
                 if(ts[i].health.cur > 0)
                 ts[i].health.cur-=this.laserDamage;
                 ts[i].speedFactor = this.laserSpeedFactor;
-                if(this.health.cur < this.health.max) {if(p) this.health.cur+=this.laserDamage*2; else this.health.cur+=this.laserDamage/2;}
+                if(this.health.cur < this.health.max) {if(p) this.health.cur+=this.laserDamage*2; else this.health.cur+=this.laserDamage;}
                 c.setTransform(1,0,0,1,0,0);
                 c.drawImage(laserCircle, 0, 0, laserCircle.width,laserCircle.height, ts[i].pos.x+(canvas.width/2-(p?p.pos.x:this.pos.x))-laserCircleSize/2, ts[i].pos.y +(canvas.height/2-(p?p.pos.y:this.pos.y))-laserCircleSize/2, laserCircleSize, laserCircleSize);
             }}
@@ -1279,7 +1282,7 @@ function addTank(team=teams.enemies){
     let tPos = {x: Math.random()*map.width, y: Math.random()*map.height};
     if(pointCollisionMap(tPos)) return
     const hull_ = pickUpRandomFromArray(aviableTanks);
-    const gun_ = pickUpRandomFromArray(aviableGuns);
+    const gun_ = pickUpRandomFromArray(team === teams.allies ? aviableGunsForAllies : aviableGuns);
     const damageT_ = CHARACTERISTICS_GUNS[gun_].damage;
     const reload_time_ = CHARACTERISTICS_GUNS[gun_].reload_time;
     const speed_ = CHARACTERISTICS_HULLS[hull_].speed;
@@ -1434,7 +1437,7 @@ setInterval(()=>{
         addTank();
     }
 }, 
-5000);
+3000);
 
 let gainButtonColors = {
     bg: '#606060',
@@ -1570,6 +1573,11 @@ function renderGame(){
         c.fillStyle='white';
         c.setTransform(1,0,0,1,0,0);
         c.fillRect(0, 0, canvas.width, canvas.height);
+        if(p.deathTime.time === 0){
+            if(tanks.length > 0){
+                p.pos = tanks[0].pos;
+            }
+        }
         c.drawImage(map, p.pos.x - canvas.width/2, p.pos.y - canvas.height/2, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
         // c.fillStyle='red';
         // c.font="50px serif";
@@ -1580,21 +1588,22 @@ function renderGame(){
         // c.fillText(`x: ${p.pos.x}`, 10, 50);
         // c.fillText(`y: ${p.pos.y}`, 10, 100);
         exps.forEach((e, i)=>{
-            if(checkCollisionPoint(p, e)){
+            if(checkCollisionPoint(p, e) && p.health.cur > 0){
                 if(e.type === 'health') {
                     p.health.cur = Math.min(p.health.max, p.health.cur + 60);
                     exps.splice(i, 1);
-                    return
                 }
-                p.exp++;
-                if(p.exp>=p.level.need){
-                    p.level.cur++;
-                    p.exp%=p.level.need;
-                    p.level.need++;
-                    on_level_up(p.level.cur + 1);
-                    setGainState();
+                else{
+                    p.exp++;
+                    if(p.exp>=p.level.need){
+                        p.level.cur++;
+                        p.exp%=p.level.need;
+                        p.level.need++;
+                        on_level_up(p.level.cur + 1);
+                        setGainState();
+                    }
+                    exps.splice(i, 1);
                 }
-                exps.splice(i, 1);
             }
             else 
             if(Math.sqrt(Math.pow(e.x - p.pos.x, 2) + Math.pow(e.y - p.pos.y, 2)) < COLLECT_RANGE){
@@ -1642,7 +1651,7 @@ function renderGame(){
             if((Math.pow(tank.pos.x+tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width-p.pos.x-p.realSize.hull.center.x*p.drawnSize/p.hull.width, 2)
                     +
                     Math.pow(tank.pos.y+tank.realSize.hull.center.y*tank.drawnSize/tank.hull.width-p.pos.y-p.realSize.hull.center.y*p.drawnSize/p.hull.width, 2) ) 
-                    < Math.pow(maxDist, 2)){
+                    < Math.pow(maxDist, 2) && p.health.cur > 0){
                         maxDist = Math.sqrt(Math.pow(tank.pos.x+tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width-p.pos.x-p.realSize.hull.center.x*p.drawnSize/p.hull.width, 2)
                         +
                         Math.pow(tank.pos.y+tank.realSize.hull.center.y*tank.drawnSize/tank.hull.width-p.pos.y-p.realSize.hull.center.y*p.drawnSize/p.hull.width, 2) )
@@ -2051,6 +2060,7 @@ function renderGame(){
                         if(tank.rotateOnPlace.active) {tank.angle.hull+=tank.rotateOnPlace.state*(tank.temp<0?(800+tank.temp)/800:1);
                             if(collisionMap(tank)) tank.angle.hull-=tank.rotateOnPlace.state*(tank.temp<0?(800+tank.temp)/800:1);
                             ts =[getBorders2(p)], tks = [p];
+                            if(p.health.cur <= 0) ts = [], tks = [];
                             tanks.filter(t=>{return (
             
                                 Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2083,6 +2093,7 @@ function renderGame(){
                                 tank.angle.hull+=1*(tank.temp<0?(800+tank.temp)/800:1);
                                 if(collisionMap(tank)) tank.angle.hull-=1*(tank.temp<0?(800+tank.temp)/800:1);
                                 ts =[getBorders2(p)], tks = [p];
+                                if(p.health.cur <= 0) ts = [], tks = [];
                                 tanks.filter(t=>{return (
             
                                     Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2110,6 +2121,7 @@ function renderGame(){
                                 tank.angle.hull-=1*(tank.temp<0?(800+tank.temp)/800:1);
                                 if(collisionMap(tank)) tank.angle.hull+=1*(tank.temp<0?(800+tank.temp)/800:1);
                                 ts =[getBorders2(p)], tks = [p];
+                                if(p.health.cur <= 0) ts = [], tks = [];
                                 tanks.filter(t=>{return (
                 
                                     Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2155,6 +2167,7 @@ function renderGame(){
                             }
                             else{
                                 ts =[getBorders2(p)], tks = [p];
+                                if(p.health.cur <= 0) ts = [], tks = [];
                                 tanks.filter(t=>{return (
                 
                                     Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2190,7 +2203,7 @@ function renderGame(){
         if(tank.health.cur<=0 ) tank.deathTime.active=true; //если здоровье <= 0, удаляю объект
         if(tank.deathTime.time == 0) {
             let type = 'exp';
-            if(Math.random() > 0.7){
+            if(Math.random() > 0.8){
                 type = 'health'
             }
             exps.push({x:tank.pos.x, y: tank.pos.y, team: teams.enemies, type: type});
@@ -2268,6 +2281,7 @@ function renderGame(){
                     tank.attackRange = tanksSize + (p.realSize.gun.center.y-p.shiftGun.back+p.shiftGun.straight)*p.drawnSize/p.gun.height;
                     for(let j = 0; j < 1; j++){
                         ts =[getBorders2(p)], tks = [p];
+                        if(p.health.cur <= 0) ts = [], tks = [];
                         tanks.filter(t=>{return (
                 
                             Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2336,6 +2350,7 @@ function renderGame(){
                 else if(tank.reload.t==0 && !tank.isFiregun){
                     if(Math.random() > 0.4){
                         ts =[getBorders2(p)], tks = [p];
+                        if(p.health.cur <= 0) ts = [], tks = [];
                         tanks.filter(t=>{return (
         
                             Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2415,6 +2430,7 @@ function renderGame(){
                     if(tank.rotateOnPlace.active) {tank.angle.hull+=tank.rotateOnPlace.state*1;
                         if(collisionMap(tank)) tank.angle.hull-=tank.rotateOnPlace.state*1;
                         ts =[getBorders2(p)], tks = [p];
+                        if(p.health.cur <= 0) ts = [], tks = [];
                         tanks.filter(t=>{return (
         
                             Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2447,6 +2463,7 @@ function renderGame(){
                             tank.angle.hull+=1*1;
                             if(collisionMap(tank)) tank.angle.hull-=1*1;
                         ts =[getBorders2(p)], tks = [p];
+                        if(p.health.cur <= 0) ts = [], tks = [];
                         tanks.filter(t=>{return (
         
                             Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2474,6 +2491,7 @@ function renderGame(){
                             tank.angle.hull-=1*1;
                             if(collisionMap(tank)) tank.angle.hull+=1*1;
                         ts =[getBorders2(p)], tks = [p];
+                        if(p.health.cur <= 0) ts = [], tks = [];
                         tanks.filter(t=>{return (
         
                             Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2523,6 +2541,7 @@ function renderGame(){
                     }
                     else{
                         ts =[getBorders2(p)], tks = [p];
+                        if(p.health.cur <= 0) ts = [], tks = [];
                         tanks.filter(t=>{return (
         
                             Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
@@ -2557,13 +2576,15 @@ function renderGame(){
             if(tank.health.cur<=0 ) tank.deathTime.active=true; //если здоровье <= 0, удаляю объект
             if(tank.deathTime.time == 0){
                 let type = 'exp';
-                if(Math.random() > 0.7){
+                if(Math.random() > 0.8){
                     type = 'health'
                 }
                 exps.push({x:tank.pos.x, y: tank.pos.y, team: teams.allies, type: type});
                 allies.splice(i, 1);} //если здоровье <= 0, удаляю объект
                 tank = null;
         });
+        if(p.health.cur <= 0) p.deathTime.active = true;
+        if(p.deathTime.time !== 0)
         p.drawHull();
         if(p.isLaserActive){
             p.updateLaser();
@@ -2602,7 +2623,7 @@ function renderGame(){
         // allTanks(p, tanks, allies).filter(t=>t.isRay).forEach(t=>{
             
         // })
-        if(p.isRay){
+        if(p.isRay && p.health.cur > 0){
             if(p.rayCd.cur <= 0)
             {let ts =[], tks = [];
             [...tanks, ...allies].filter(tank=>{return (
@@ -2698,11 +2719,13 @@ function renderGame(){
         }
         tanks.forEach(t=>{t.drawGun(p)});
         allies.forEach(t=>{t.drawGun(p)});
+        if(p.deathTime.time !== 0)
         p.drawGun();
         tanks.forEach(t=>{t.drawEffects(p)});
         allies.forEach(t=>{t.drawEffects(p)});
+        if(p.deathTime.time !== 0)
         p.drawEffects();
-        if(p.bombardment.isActive && p.bombardment.cd.cur == 0){
+        if(p.bombardment.isActive && p.bombardment.cd.cur == 0 && p.health.cur > 0){
             let eB = tanks.filter(t=>{return (
 
                 Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-p.pos.x-p.realSize.hull.center.x*p.drawnSize/p.hull.width, 2)
@@ -2755,6 +2778,7 @@ function renderGame(){
         })
         let ts, tks;    
         ts =[getBorders2(p)], tks = [p];
+        if(p.health.cur <= 0) ts = [], tks = [];
         tanks.forEach(f=>{
             ts.push(getBorders2(f)); tks.push(f);
         });
@@ -2989,7 +3013,7 @@ function renderGame(){
                 // if(pointCollisionMap({x:bx+p.pos.x, y: by+p.pos.y})) break
 
         })
-        if(p.bombardment.action.isActive){
+        if(p.bombardment.action.isActive && p.health.cur > 0){
             if(p.bombardment.crosshair.cur > 0){
                 p.bombardment.crosshair.cur--;
                 c.drawImage(bombCrosshair, 0, 0, bombCrosshair.width, bombCrosshair.height, canvas.width/2-p.pos.x+p.bombardment.enemy.pos.x-canvas.width*0.025-(p.bombardment.crosshair.cur/p.bombardment.crosshair.max)*canvas.width*0.15/2, canvas.height/2-p.pos.y+p.bombardment.enemy.pos.y-canvas.width*0.025-(p.bombardment.crosshair.cur/p.bombardment.crosshair.max)*canvas.width*0.15/2,
@@ -3030,8 +3054,24 @@ function renderGame(){
         // how set font family to canvas
 
         c.textBaseline='top';
+        c.textAlign='center';
         c.font="30px Joystix";
+        let game_time_str = `${Math.floor(game_time/60)}:${game_time%60<10?'0'+game_time%60:game_time%60}`;
+        if(Math.floor(game_time / 60) < 10) game_time_str = `0${game_time_str}`;
+        c.fillText(`${game_time_str}`, canvas.width/2, 0)
         c.fillText(`${p.level.cur + 1} LVL`, canvas.width*5/6, 0)
+        if(p.deathTime.time !== 0){
+            game_time_timer++;
+            if(game_time_timer % 60 == 0) {
+                game_time++;
+                game_time_timer = 0;
+            }
+        } else{
+            c.fillStyle = 'red';
+            c.textBaseline = 'middle';
+            c.font = "100px Joystix";
+            c.fillText(`GAME OVER`, canvas.width/2, canvas.height/2)
+        }
         
         // c.font="50px serif";
         // c.fillText(`${p.bombardment.cd.cur}`, canvas.width/4, 50);
@@ -3334,15 +3374,16 @@ function key_up(e) {
 //https://free-game-assets.itch.io/free-2d-tank-game-assets?download
 function key_pressed(keycode) {
     if(gameState == gameStates.active){
+    if(p.deathTime.time === 0) return
     let ts;
     switch(keycode){
         case CONTROLS.rotateLeft.key_code:
             if(1) //!p.teslaActive || 
-            p.angle.gun-=5*(p.temp<0?(800+p.temp)/800:1);
+            p.angle.gun-=3*(p.temp<0?(800+p.temp)/800:1);
             break
         case CONTROLS.rotateRight.key_code:
             if(1) //!p.teslaActive || 
-            p.angle.gun+=5*(p.temp<0?(800+p.temp)/800:1);
+            p.angle.gun+=3*(p.temp<0?(800+p.temp)/800:1);
             break
         case CONTROLS.left.key_code:
             if(1) //!p.teslaActive || 
@@ -3421,21 +3462,22 @@ function key_pressed(keycode) {
             })
             p.isMove=true;
             exps.forEach((e, i)=>{
-                if(checkCollisionPoint(p, e)){
+                if(checkCollisionPoint(p, e) && p.health.cur > 0){
                     if(e.type === 'health') {
                         p.health.cur = Math.min(p.health.max, p.health.cur + 60);
                         exps.splice(i, 1);
-                        return
                     }
-                    p.exp++;
-                    if(p.exp>=p.level.need){
-                        p.level.cur++;
-                        p.exp%=p.level.need;
-                        p.level.need++;
-                        on_level_up(p.level.cur + 1);
-                        setGainState();
+                    else{
+                        p.exp++;
+                        if(p.exp>=p.level.need){
+                            p.level.cur++;
+                            p.exp%=p.level.need;
+                            p.level.need++;
+                            on_level_up(p.level.cur + 1);
+                            setGainState();
+                        }
+                        exps.splice(i, 1);
                     }
-                    exps.splice(i, 1);
                 }
             })
             break;
@@ -3467,16 +3509,22 @@ function key_pressed(keycode) {
                 
             p.isMove=true;
             exps.forEach((e, i)=>{
-                if(checkCollisionPoint(p, e)){
-                    p.exp++;
-                    if(p.exp>=p.level.need){
-                        p.level.cur++;
-                        p.exp%=p.level.need;
-                        p.level.need++;
-                        on_level_up(p.level.cur + 1);
-                        setGainState();
+                if(checkCollisionPoint(p, e) && p.health.cur > 0){
+                    if(e.type === 'health') {
+                        p.health.cur = Math.min(p.health.max, p.health.cur + 60);
+                        exps.splice(i, 1);
                     }
-                    exps.splice(i, 1);
+                    else{
+                        p.exp++;
+                        if(p.exp>=p.level.need){
+                            p.level.cur++;
+                            p.exp%=p.level.need;
+                            p.level.need++;
+                            on_level_up(p.level.cur + 1);
+                            setGainState();
+                        }
+                        exps.splice(i, 1);
+                    }
                 }
             })
             break;
@@ -3901,6 +3949,7 @@ function teslaShotE(tank){
     for(let j = 0; j < 1; j++){
         let attacked = [],
         ts =[getBorders2(p)], tks = [p];
+        if(p.health.cur <= 0) ts = [], tks = [];
         tanks.filter(t=>{return (
 
             Math.pow(t.pos.x+t.realSize.hull.center.x*t.drawnSize/t.hull.width-tank.pos.x-tank.realSize.hull.center.x*tank.drawnSize/tank.hull.width, 2)
