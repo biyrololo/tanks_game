@@ -145,6 +145,8 @@ ricoBullet.src = `${srcImg}ricoBullet.png`;
 freezeBullet.src = `${srcImg}freezeBullet.png`;
 const ray = new Image();
 ray.src = `${srcImg}Effects/ray.png`;
+const health_img = new Image();
+health_img.src = `${srcImg}health.png`;
 const ricochetBullets = [], freezeGunBullets = [],
 ricochetBulletsSpeed = 20, freezeGunBulletsSpeed = 7;
 const raySize = 20, rayRange = 400;
@@ -154,6 +156,9 @@ for(let i = 1; i <= 8; ++i){
     g.src=`${srcImg}Effects/rayExp${i}.png`;
     rayExps.push(g);
 }
+
+var COLLECT_RANGE = 100;
+
 const playerStatesList = [
     {
         name: 'speed',
@@ -203,6 +208,14 @@ const playerStatesList = [
         img: '#000',
         icon: {x: 3, y: 0},
         active: false
+    },
+    {
+        name: 'collect_range',
+        cur: 0,
+        max: 3,
+        img: 'blue',
+        icon: {x: 0, y :2},
+        active: false
     }
 ],
 playerStates = {
@@ -212,7 +225,8 @@ playerStates = {
     damage: 3,
     laser: 4,
     airSupport: 5,
-    ray: 6
+    ray: 6,
+    collect_range: 7
 }
 const tanksParams={ 
     '01':{
@@ -1193,6 +1207,27 @@ new Pumping('Увеличить урон', {x: 0, y: 0}, ()=>{
         p.damageT*=1.2;    
     },playerStatesList[playerStates.damage].max-1));
 }),
+new Pumping('Радиус сбора +20%', {x: 0, y: 2},
+()=>{
+    playerStatesList[playerStates.collect_range].active=true;
+    playerStatesList[playerStates.collect_range].cur++;
+    COLLECT_RANGE*=1.2;
+    pumpings.push(
+        new Pumping('Радиус сбора +30%', {x: 0, y: 2},
+        ()=>{
+            playerStatesList[playerStates.collect_range].cur++;
+            COLLECT_RANGE*=1.3;
+            pumpings.push(
+                new Pumping('Радиус сбора +40%', {x: 0, y: 2},
+                ()=>{
+                    playerStatesList[playerStates.collect_range].cur++;
+                    COLLECT_RANGE*=1.4;
+                })
+            )
+        }),
+    )
+}
+)
 // new Pumping('ОГНЕМЁТ', '#fc6203', ()=>{p.reload.t = 0;p.isRicochet = false; p.isTesla=false; p.isFiregun=true; p.isMGun=false; p.MGActive = false; p.isThunder=false; p.setGun(firegunIMG); p.damageT=2; p.reload.mTime = 86; p.isFreezegun=false;}),
 // new Pumping('РЕЛЬСА', '#00fffb', ()=>{p.reload.t = 0;p.isRicochet = false; p.isTesla=true; p.isFiregun=false; p.isMGun=false; p.MGActive = false; p.isThunder=false; p.setGun(teslaIMG); p.damageT=50; p.reload.mTime = 70; p.isFreezegun=false;}),
 // new Pumping('ПУЛЕМЁТ', '#00fffb', ()=>{p.reload.t = 0;p.isRicochet = false; p.isMGun=true; p.isFiregun=false; p.isTesla=false; p.setGun(MGIMG); p.isThunder=false; p.damageT=1; p.reload.mTime = 100; p.isFreezegun=false;}),
@@ -1205,6 +1240,10 @@ new Pumping('Увеличить урон', {x: 0, y: 0}, ()=>{
 
 ];
 
+const exp_image = new Image();
+
+exp_image.src = `${srcImg}exp.png`;
+
 const p = new Tank({x: 824, y: 350},{hull: ALL_HULLS[0], gun: ALL_GUNS[0]},8, 'A', avliableHullColors[0],teams.allies, 2, pickUpRandomFromArray(aviableTracks)), //pickUpRandomFromArray(aviableTanks)
 secondTank = new Tank({x: canvas.width/2-250, y: canvas.height/2-250},{hull:'08', gun:'02'},5, 'A'); //,{hull: {center:{x:128, y:174}}, gun: {center:{x: 128, y: 160}}}
 // p.bombardment.isActive = true;
@@ -1213,7 +1252,7 @@ damage=30;
 p.countShots=1;
 p.isLaserActive=0;
 p.damageT = 30;
-p.laserDamage = 0.2;
+p.laserDamage = 0.1;
 // p.reload.mTime = 180;
 p.reload.t = 0;
 p.attackRange = canvas.width*0.3;
@@ -1540,11 +1579,42 @@ function renderGame(){
         // c.fillText(`tanks.length = ${tanks.length}`, canvas.width*3/4, 50);
         // c.fillText(`x: ${p.pos.x}`, 10, 50);
         // c.fillText(`y: ${p.pos.y}`, 10, 100);
-        exps.forEach(e=>{
-            if(e.team==teams.enemies)
-                c.fillStyle='blue';
-            else c.fillStyle='red';
-            c.fillRect(-p.pos.x+canvas.width/2+ e.x-10,-p.pos.y+canvas.height/2+ e.y-10, 20, 20);
+        exps.forEach((e, i)=>{
+            if(checkCollisionPoint(p, e)){
+                if(e.type === 'health') {
+                    p.health.cur = Math.min(p.health.max, p.health.cur + 60);
+                    exps.splice(i, 1);
+                    return
+                }
+                p.exp++;
+                if(p.exp>=p.level.need){
+                    p.level.cur++;
+                    p.exp%=p.level.need;
+                    p.level.need++;
+                    on_level_up(p.level.cur + 1);
+                    setGainState();
+                }
+                exps.splice(i, 1);
+            }
+            else 
+            if(Math.sqrt(Math.pow(e.x - p.pos.x, 2) + Math.pow(e.y - p.pos.y, 2)) < COLLECT_RANGE){
+                if(e.x < p.pos.x){
+                    e.x++;
+                }
+                if(e.x > p.pos.x){
+                    e.x--;
+                }
+                if(e.y < p.pos.y){
+                    e.y++;
+                }
+                if(e.y > p.pos.y){
+                    e.y--;
+                }
+            }
+            let dr_img = exp_image;
+            if(e.type === 'health') dr_img = health_img;
+            c.drawImage(dr_img, 0, 0, dr_img.width, dr_img.height, -p.pos.x+canvas.width/2+ e.x-20,-p.pos.y+canvas.height/2+ e.y-20, 40, 40);
+            // c.fillRect(-p.pos.x+canvas.width/2+ e.x-10,-p.pos.y+canvas.height/2+ e.y-10, 20, 20);
         })
         lastTime = Date.now();
         // c.drawImage(hull, 0, 0, hull.width, hull.height, -p.pos.x+secondPos.x+canvas.width/2, -p.pos.y+secondPos.y+canvas.height/2, hullSize.w, hullSize.h);
@@ -2119,7 +2189,11 @@ function renderGame(){
             tank.drawHull(p); //рисую
         if(tank.health.cur<=0 ) tank.deathTime.active=true; //если здоровье <= 0, удаляю объект
         if(tank.deathTime.time == 0) {
-            exps.push({x:tank.pos.x, y: tank.pos.y, team: teams.enemies});
+            let type = 'exp';
+            if(Math.random() > 0.7){
+                type = 'health'
+            }
+            exps.push({x:tank.pos.x, y: tank.pos.y, team: teams.enemies, type: type});
             tanks.splice(i, 1);} //если здоровье <= 0, удаляю объект
             tank = null;
         });
@@ -2482,7 +2556,11 @@ function renderGame(){
             tank.drawHull(p); //рисую
             if(tank.health.cur<=0 ) tank.deathTime.active=true; //если здоровье <= 0, удаляю объект
             if(tank.deathTime.time == 0){
-                exps.push({x:tank.pos.x, y: tank.pos.y, team: teams.allies});
+                let type = 'exp';
+                if(Math.random() > 0.7){
+                    type = 'health'
+                }
+                exps.push({x:tank.pos.x, y: tank.pos.y, team: teams.allies, type: type});
                 allies.splice(i, 1);} //если здоровье <= 0, удаляю объект
                 tank = null;
         });
@@ -3344,6 +3422,11 @@ function key_pressed(keycode) {
             p.isMove=true;
             exps.forEach((e, i)=>{
                 if(checkCollisionPoint(p, e)){
+                    if(e.type === 'health') {
+                        p.health.cur = Math.min(p.health.max, p.health.cur + 60);
+                        exps.splice(i, 1);
+                        return
+                    }
                     p.exp++;
                     if(p.exp>=p.level.need){
                         p.level.cur++;
