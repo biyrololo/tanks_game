@@ -5,14 +5,23 @@ mapZoom = 1.5,
 tileSize = 32*mapZoom,
 allWidth = 48, allHeight = 48,
 collisionBlocks = [], bulletCollisionBlocks = []; //=Data Map
+const SPAWN_ZONES_BLOCKS = [];
 collision.forEach(co=>{
     co.data.forEach((tile, i)=>{
         if(tile != 0)
-            {collisionBlocks.push({x: (i%co.width+co.x+16)*32*mapZoom, y: (Math.floor(i/co.width)+co.y)*32*mapZoom})
-                if(tile != 42)
-                bulletCollisionBlocks.push({x: (i%co.width+co.x+16)*32*mapZoom, y: (Math.floor(i/co.width)+co.y)*32*mapZoom})}
+            {collisionBlocks.push({x: (i%co.width+co.x)*32*mapZoom, y: (Math.floor(i/co.width)+co.y+16)*32*mapZoom})
+                if(tile != 42 && tile != 152)
+                bulletCollisionBlocks.push({x: (i%co.width+co.x)*32*mapZoom, y: (Math.floor(i/co.width)+co.y+16)*32*mapZoom})}
     })
 })
+
+SPAWN_ZONES_TILES.forEach(co =>{
+    co.data.forEach((tile, i)=>{
+        if(tile != 0)
+            SPAWN_ZONES_BLOCKS.push({x: (i%co.width+co.x)*32*mapZoom, y: (Math.floor(i/co.width)+co.y+16)*32*mapZoom})
+    })
+}
+)
 
 class Btn{
     constructor(pos, size, text, color,font, onclick){
@@ -99,7 +108,7 @@ var lastTime = Date.now();
 const beginMap = {x: canvas.width*0.1, y: canvas.height*0.1},
 endMap = {x: canvas.width*0.9, y: canvas.height*0.9};
 const map = new Image();
-map.src=`${srcImg}map.png`;
+map.src=`${srcImg}map2.png`;
 // const hull = new Image(), gun = new Image();
 // hull.src=`${srcImg}Hull_01.png`;
 // gun.src=`${srcImg}Gun_01.png`;
@@ -349,7 +358,7 @@ class Tank{
         this.speedFactor = 1;
         this.rayCd = {cur: 0, max: 720};
         this.rayCount = 1;
-        this.damageT = damage;
+        this.damageT = damageT;
         this.fires={state: Math.floor(Math.random()*this.fire.length), freq: 6, timer: 0};
         this.countShots = countShots;
         this.hullColor = hullColor;
@@ -1247,7 +1256,7 @@ const exp_image = new Image();
 
 exp_image.src = `${srcImg}exp.png`;
 
-const p = new Tank({x: 824, y: 350},{hull: ALL_HULLS[0], gun: ALL_GUNS[0]},8, 'A', avliableHullColors[0],teams.allies, 2, pickUpRandomFromArray(aviableTracks)), //pickUpRandomFromArray(aviableTanks)
+const p = new Tank(pickUpRandomFromArray(SPAWN_ZONES_BLOCKS),{hull: ALL_HULLS[0], gun: ALL_GUNS[0]},CHARACTERISTICS_HULLS[ALL_HULLS[0]].speed, 'A', avliableHullColors[0],teams.allies, 2, pickUpRandomFromArray(aviableTracks), CHARACTERISTICS_HULLS[ALL_HULLS[0]].max_health, tanksSize, CHARACTERISTICS_GUNS[ALL_GUNS[0]].damage), //pickUpRandomFromArray(aviableTanks)
 secondTank = new Tank({x: canvas.width/2-250, y: canvas.height/2-250},{hull:'08', gun:'02'},5, 'A'); //,{hull: {center:{x:128, y:174}}, gun: {center:{x: 128, y: 160}}}
 // p.bombardment.isActive = true;
 p.reload.mTime=50;
@@ -1279,7 +1288,9 @@ var tanks = []; //secondTank, new Tank({x: canvas.width/2+250, y: canvas.height/
 // }
 function addTank(team=teams.enemies){
     if(!document.hasFocus()) return;
-    let tPos = {x: Math.random()*map.width, y: Math.random()*map.height};
+    const spawn_tile = pickUpRandomFromArray(SPAWN_ZONES_BLOCKS);
+    // let tPos = {x: Math.random()*map.width, y: Math.random()*map.height};
+    let tPos = {x: spawn_tile.x, y: spawn_tile.y};
     if(pointCollisionMap(tPos)) return
     const hull_ = pickUpRandomFromArray(aviableTanks);
     const gun_ = pickUpRandomFromArray(team === teams.allies ? aviableGunsForAllies : aviableGuns);
@@ -1428,16 +1439,16 @@ setInterval(()=>{
         return
     }
 
-    if(allies.length < 5){
+    if(allies.length < 4){
         addTank(teams.allies)
         return
     }
 
-    if(tanks.length < 10){
+    if(tanks.length < 7){
         addTank();
     }
 }, 
-3000);
+4000);
 
 let gainButtonColors = {
     bg: '#606060',
@@ -1497,7 +1508,7 @@ function animate(){
         renderGame();
     }
     if(gameState == gameStates.chooseGain){
-        c.fillStyle='white';
+        c.fillStyle='#4D9262';
         c.setTransform(1,0,0,1,0,0);
         c.fillRect(0, 0, canvas.width, canvas.height);
         c.drawImage(map, p.pos.x - canvas.width/2, p.pos.y - canvas.height/2, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
@@ -1570,7 +1581,7 @@ function setGainState(){
 }
 
 function renderGame(){
-        c.fillStyle='white';
+        c.fillStyle='#4D9262';
         c.setTransform(1,0,0,1,0,0);
         c.fillRect(0, 0, canvas.width, canvas.height);
         if(p.deathTime.time === 0){
@@ -3082,9 +3093,10 @@ function renderGame(){
         // c.drawImage(hull, -hull.width/2, -hull.height/2);
 
         // c.fillStyle='red';
-        // collisionBlocks.forEach(cb=>{
+        // bulletCollisionBlocks.forEach(cb=>{
         //     c.fillRect(cb.x+canvas.width/2-p.pos.x, cb.y+canvas.height/2-p.pos.y, 32*mapZoom, 32*mapZoom);
         // })
+        // SHOW COLLISION
 }
 
 /**
@@ -3372,6 +3384,7 @@ function key_up(e) {
 }
 //https://puzzleweb.ru/javascript/char_codes-key_codes.php
 //https://free-game-assets.itch.io/free-2d-tank-game-assets?download
+// TILESET https://stealthix.itch.io/rpg-nature-tileset
 function key_pressed(keycode) {
     if(gameState == gameStates.active){
     if(p.deathTime.time === 0) return

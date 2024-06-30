@@ -46,7 +46,7 @@ const _FPS = 60;
 const CHARACTERISTICS_GUNS = {
     '01': { // дефолт
         damage: 30,
-        reload_time: _FPS * 1.5
+        reload_time: _FPS * 1
     },
     '02': { // рельса
         damage: 50,
@@ -66,7 +66,7 @@ const CHARACTERISTICS_GUNS = {
     },
     '06': { // двойная
         damage: 25,
-        reload_time: _FPS * 2
+        reload_time: _FPS * 1.5
     },
     '07': { // гром
         damage: 40,

@@ -7,8 +7,8 @@ const menu_tank = new Tank(
         y: 0
     },
     {
-        hull: aviableTanks[hull_index],
-        gun: aviableGuns[gun_index]
+        hull: ALL_GUNS[hull_index],
+        gun: ALL_GUNS[gun_index]
     },
     1,
     'A',
