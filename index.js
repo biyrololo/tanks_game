@@ -1508,7 +1508,7 @@ function animate(){
         renderGame();
     }
     if(gameState == gameStates.chooseGain){
-        c.fillStyle='#4D9262';
+        c.fillStyle='#639BFF';
         c.setTransform(1,0,0,1,0,0);
         c.fillRect(0, 0, canvas.width, canvas.height);
         c.drawImage(map, p.pos.x - canvas.width/2, p.pos.y - canvas.height/2, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
@@ -1581,7 +1581,7 @@ function setGainState(){
 }
 
 function renderGame(){
-        c.fillStyle='#4D9262';
+        c.fillStyle='#639BFF';
         c.setTransform(1,0,0,1,0,0);
         c.fillRect(0, 0, canvas.width, canvas.height);
         if(p.deathTime.time === 0){
@@ -3134,6 +3134,7 @@ function collisionMap(obj){
     c.lineTo(aPoints[0].x, aPoints[0].y);
     c.closePath();
         res = res || (c.isPointInPath(b.x, b.y) || c.isPointInPath(b.x+tileSize, b.y) || c.isPointInPath(b.x+tileSize, b.y+tileSize) || c.isPointInPath(b.x, b.y+tileSize))
+        if(res) return true;
     })
     return res;
 }
@@ -3156,6 +3157,7 @@ function pointCollisionMap(obj){
         c.lineTo(b.x, b.y);
         c.closePath();
         res = res || c.isPointInPath(obj.x, obj.y);
+        if(res) return true;
     })
     return res;
 
