@@ -103,6 +103,10 @@ c = canvas.getContext("2d"),
 srcImg = 'img/';
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
+window.addEventListener('resize', () => {
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+})
 c.imageSmoothingEnabled = true;
 var lastTime = Date.now();
 const beginMap = {x: canvas.width*0.1, y: canvas.height*0.1},
@@ -1493,6 +1497,10 @@ let gainsButtons = [
         }
     )
 ] 
+
+var prev_perfomace = performance.now();
+var min_fps = Number.MAX_SAFE_INTEGER - 1;
+let fpss = [];
 animate();
 
 var is_start_menu_loaded = false;
@@ -1502,8 +1510,20 @@ function start_menu_loaded(){
 }
 
 function animate(){
-    // requestAnimationFrame(animate);
-    setTimeout(animate, 1000/60);
+    requestAnimationFrame(animate);
+    let cur_perfomance = performance.now();
+    let fps = 0;
+    if(cur_perfomance !== prev_perfomace){
+        fps = 1 / (cur_perfomance - prev_perfomace) * 1000;
+        if(fpss.length > 1000) fpss.shift();
+        fpss.push(fps);
+        if(fps < min_fps && fps > 30){
+            console.warn(`FPS dropped down: ${fps}`)
+            min_fps = fps;
+        }
+        prev_perfomace = cur_perfomance
+    }
+    // setTimeout(animate, 1000/60);
     if(gameState == gameStates.active && document.hasFocus()){
         renderGame();
     }
@@ -1543,6 +1563,10 @@ function animate(){
         if(is_start_menu_loaded)
             renderStartMenu();
     }
+    // c.fillStyle = 'red';
+    // let medium_fps = fpss.reduce((a, b) => a + b, 0) / fpss.length;
+    // c.fillText(`fps median: ${Math.floor(medium_fps)}`, 200, 10);
+    // c.fillText(`fps: ${Math.floor(fps)}`, 200, 30);
     mouse.click=false;
 }
 
@@ -1642,6 +1666,8 @@ function renderGame(){
             логика противников
         */
         tanks.forEach((tank, i)=>{
+            let is_in_screen = Math.sqrt(Math.pow(tank.pos.x-p.pos.x, 2) + Math.pow(tank.pos.y-p.pos.y, 2)) < Math.sqrt(window.width*window.width + window.height*window.height) * 2;
+            tank.is_in_screen = is_in_screen;
             let ts, tks;
             // tank.angle.gun++; //поворот башни
             if(!tank.deathTime.active){
@@ -2210,7 +2236,9 @@ function renderGame(){
                     tank.updateReload(p);
                     }
             }
-            tank.drawHull(p); //рисую
+            if(tank.is_in_screen){
+                tank.drawHull(p); //рисую
+            }
         if(tank.health.cur<=0 ) tank.deathTime.active=true; //если здоровье <= 0, удаляю объект
         if(tank.deathTime.time == 0) {
             let type = 'exp';
@@ -2222,6 +2250,8 @@ function renderGame(){
             tank = null;
         });
         allies.forEach((tank, i)=>{
+            let is_in_screen = Math.sqrt(Math.pow(tank.pos.x-p.pos.x, 2) + Math.pow(tank.pos.y-p.pos.y, 2)) < Math.sqrt(window.width*window.width + window.height*window.height) * 2;
+            tank.is_in_screen = is_in_screen;
             let ts, tks;
             // tank.angle.gun++; //поворот башни
             if(!tank.deathTime.active){
@@ -2583,7 +2613,9 @@ function renderGame(){
             }
             
         }
-            tank.drawHull(p); //рисую
+            if(tank.is_in_screen){
+                tank.drawHull(p); //рисую
+            }
             if(tank.health.cur<=0 ) tank.deathTime.active=true; //если здоровье <= 0, удаляю объект
             if(tank.deathTime.time == 0){
                 let type = 'exp';
@@ -2728,8 +2760,8 @@ function renderGame(){
             p.rayAnim.cur++; if(p.rayAnim.cur == p.rayAnim.max) p.rayAnim.cur = 0;}}
             else p.rayCd.cur--;
         }
-        tanks.forEach(t=>{t.drawGun(p)});
-        allies.forEach(t=>{t.drawGun(p)});
+        tanks.forEach(t=>{if(t.is_in_screen) {t.drawGun(p)} else {t.health.cur -= 1;}});
+        allies.forEach(t=>{if(t.is_in_screen) {t.drawGun(p)} else {t.health.cur -= 1;}});
         if(p.deathTime.time !== 0)
         p.drawGun();
         tanks.forEach(t=>{t.drawEffects(p)});

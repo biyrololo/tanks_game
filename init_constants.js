@@ -51,37 +51,37 @@ const CONTROLS = {
     forward: {
         key_code: '87',
         key_name: 'w',
-        title: '🠕'
+        title: 'Вперёд'
     },
     backward: {
         key_code: '83',
         key_name: 's',
-        title: '🠗'
+        title: 'Назад'
     },
     left: {
         key_code: '65',
         key_name: 'a',
-        title: '🠔'
+        title: 'Влево'
     },
     right: {
         key_code: '68',
         key_name: 'd',
-        title: '🠖'
+        title: 'Вправо'
     },
     fire: {
         key_code: '32',
         key_name: 'space',
-        title: '🔥'
+        title: 'Огонь'
     },
     rotateLeft: {
         key_code: '37',
         key_name: 'left',
-        title: '⤹'
+        title: 'Башня влево'
     },
     rotateRight: {
         key_code: '39',
         key_name: 'right',
-        title: '⤸'
+        title: 'Башня вправо'
     }
 }
 

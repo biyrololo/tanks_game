@@ -5,8 +5,10 @@ class MenuButton{
      * @param {{width: number, height: number}} size 
      * @param {function} onclick 
      * @param {string} image 
+     * @param {boolean} transparent
      */
-    constructor(pos, size, onclick, image){
+    constructor(pos, size, onclick, image, transparent = false){
+        this.transparent = transparent;
         this.state = 1;
         this.pos=pos;
         this.size=size;
@@ -20,13 +22,13 @@ class MenuButton{
         return (mouse.x>this.pos.x && mouse.x<this.pos.x+this.size.width && mouse.y>this.pos.y && mouse.y  < this.pos.y+this.size.height);
     }
     hover(){
-        if(this.hoverParams.back) this.hoverParams.back=false;
+        // if(this.hoverParams.back) this.hoverParams.back=false;
         document.body.style.cursor='pointer';
-        if(this.hoverParams.state===0) {
-            if(this.hoverParams.value<this.hoverParams.max)
-            this.hoverParams.value++;
-        }
-        this.shift=this.size.height*0.1*this.hoverParams.value/this.hoverParams.max;
+        // if(this.hoverParams.state===0) {
+        //     if(this.hoverParams.value<this.hoverParams.max)
+        //     this.hoverParams.value++;
+        // }
+        // this.shift=this.size.height*0.1*this.hoverParams.value/this.hoverParams.max;
         if(mouse.click) this.onclick();
     }
     endHover(){
@@ -51,10 +53,13 @@ class MenuButton{
         if(is_active){
             c.fillStyle='#6A9E4A';
         }
-        c.fillRect(this.pos.x,this.pos.y,this.size.width,this.size.height*0.8+this.shift);
-        // c.fillStyle='white';
-        c.fillRect(this.pos.x,this.pos.y+this.size.height*0.8+this.shift,this.size.width,this.size.height*0.2-this.shift);
-        let padding_x = (this.size.width - 150) / 2;
+        if(!this.transparent){
+            c.fillRect(this.pos.x,this.pos.y,this.size.width,this.size.height);
+            // c.fillStyle='white';
+            // c.fillRect(this.pos.x,this.pos.y+this.size.height*0.8+this.shift,this.size.width,this.size.height*0.2-this.shift);
+        }
+        // let padding_x = (this.size.width - 150) / 2;
+        let padding_x = 0;
         c.drawImage(this.image, this.pos.x + padding_x, this.pos.y, this.size.height, this.size.height);
     }
 }

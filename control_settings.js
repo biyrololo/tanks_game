@@ -66,7 +66,7 @@ var active_control_ = null;
 
 const controlBtns = allContols.map((key, index) => {
     return new ControlBtn(
-        {x: 10 + index * 110, y: 600},
+        {x: 10 + (index % 4) * 200, y: 600 + Math.floor(index / 4) * 90},
         {width: 100, height: 50},
         CONTROLS[key].key_name,
         {
